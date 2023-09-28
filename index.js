@@ -2,35 +2,34 @@ const prompt = require('prompt-sync')();
 const fs = require('fs-extra');
 const { stringify } = require('querystring');
 
-let balancePath = "./data/balance.json";
-let balanceDir = balancePath.slice(0, balancePath.lastIndexOf('/')+1)
-let balanceFile = balancePath.slice(balancePath.lastIndexOf('/')+1);
+let filePath = "./data/balance.json";
+let fileDir = filePath.slice(0, filePath.lastIndexOf('/')+1)
+let fileName = filePath.slice(filePath.lastIndexOf('/')+1);
 let answer = "5";
 
 do {
-
     log("\n\n\n\n=========================")
     log("Your Bank Account\n")
-    log("Choose action : \n1. Add Ballance\n2. Withdraw Balance\n3. Transfer Balance\n4. Chech Balance\n5. Exit\n");
+    log("Choose action : \n1. Add Ballance\n2. Withdraw Balance\n3. Transfer Balance\n4. Check Balance\n5. Exit\n");
 
     answer = prompt("Answer : ")
     answer = Number(answer);
 
     switch (answer) {
         case 1:
-            addB();
+            addB(); // work perfectly fine
             break;
 
         case 2:
-            takeB();
+            takeB(); // work fine.. maybe?
             break;
 
         case 3:
-            tfB();
+            tfB(); // unfinished
             break;
 
         case 4:
-            seeB();
+            seeB(); // work fine
             break;
     
         case NaN:
@@ -46,46 +45,135 @@ do {
 while (answer != "5");
 
 
-async function addB(){
+function addB(){
 
-    let value = prompt("Enter Balance : ");
+    let value = prompt("Value : ");
     value = Number(value);
 
-    if(!fs.existsSync(balancePath)) {
-        fs.mkdirSync(balanceDir, { recursive : true });
+    if(fs.existsSync(filePath)){
 
-        const dataJson = {
+        try{
+            const dataJson = fs.readFileSync(filePath, 'utf-8');
+            const parsedJson = JSON.parse(dataJson);
+            const bal = parsedJson.balance;
+
+            bal.push(value);
+
+            if(bal.lenght > 2||"2"){
+                result = bal.reduce((a,b) => a+b );
+                bal.push(result);
+                bal.shift();
+                bal.shift();
+            }
+
+            fs.writeFileSync(filePath, JSON.stringify(parsedJson,null,2), 'utf-8');
+
+            console.log(`Succesfully added ${value} into ur balance\nTotal balance now: $${parsedJson.balance}`);
+        }
+
+        catch(e){
+            fs.mkdir(fileDir,{recursive:true});
+
+            const parsedJson = {
+                balance : [value]
+            };
+
+            fs.writeFileSync(filePath, JSON.stringify(parsedJson, null, 2), 'utf-8');
+
+            console.log(`Succesfully added ${value} into ur balance\nTotal balance now: $${parsedJson.balance}`);
+        }
+    }
+
+}
+
+
+function seeB(){
+
+    if(fs.existsSync(filePath)){
+
+        try{
+            const dataJson = fs.readFileSync(filePath);
+            const parsedJson = JSON.parse(dataJson);
+
+            console.log(`Ur balance is : $${parsedJson.balance}`);
+        }
+
+        catch{
+            fs.mkdirSync(fileDir, {recursive:true});
+            let value = value||0;
+
+            const parsedJson = {
+                balance : [value]
+            };
+
+            fs.writeFileSync(filePath, JSON.stringify(parsedJson, null, 2), 'utf-8');
+
+            console.log(`Succesfully added : $${parsedJson.balance}`);
+        }
+    }
+
+    else{
+        fs.mkdirSync(filePath, {recursive:true});
+        let value = 0;
+
+        const parsedJson = {
             balance : [value]
         };
 
-        fs.writeFileSync(balancePath, JSON.stringify(dataJson, null, 2));
+        fs.writeFileSync(filePath, JSON.stringify(parsedJson, null, 2), 'utf-8');
 
-        if(fs.existsSync(balancePath)){
-            console.log("Succes Adding Balance!");
-        } 
-    } 
+        console.log(`Ur Balance rn is : ${value}`);
+    }
 
-    else{
-        const dataJson = fs.readFileSync(balancePath, 'utf8');
-        const parsedData = JSON.parse(dataJson);
+}
 
-        if(parsedData.balance.length > 1){
-            let result = parsedData.balance.reduce((a,b) => {
-                return a + b;
-            });
-            parsedData.balance.push(result);
+
+function takeB(){
+
+    let value = prompt("Put ur withdrawal amount : ")
+    value = Number(value);
+
+    if(fs.existsSync(filePath)&&value != NaN||undefined){
+
+        try{
+            const dataJson = fs.readFileSync(filePath);
+            const parsedJson = JSON.parse(dataJson);
+
+            parsedJson.balance -= [value];
+
+            fs.writeFileSync(filePath, JSON.stringify(parsedJson, null, 2), 'utf-8');
+            console.log(`U take $${value} from ur balance`);
+            console.log(`Ur total balance is : ${parsedJson.balance}`);
         }
 
-            parsedData.balance.push(value);
-        
-        if(parsedData.balance.lenght > 1){
-            parsedData.balance.shift();
+        catch{
+            fs.mkdirSync(filePath, {recursive:true});
+            let value = 0;
+    
+            const parsedJson = {
+                balance : [value]
+            };
+    
+            fs.writeFileSync(filePath, JSON.stringify(parsedJson, null, 2), 'utf-8');
+    
+            console.log(`U can't withdraw, Ur Balance rn is : ${value}`);
+        }
+    }
+
+    else {
+        fs.mkdirSync(filePath, {recursive:true});
+        let value = 0;
+
+        const parsedJson = {
+            balance : [value]
         };
 
-        fs.writeFileSync(balancePath, JSON.stringify(parsedData, null, 2), 'utf8');
-    };
+        fs.writeFileSync(filePath, JSON.stringify(parsedJson, null, 2), 'utf-8');
 
-    
+        console.log(`U can't withdraw, Ur Balance rn is : ${value}`);
+    }
+
+
 }
 
 function log(value) {
